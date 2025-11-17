@@ -5,28 +5,35 @@ const prisma = new PrismaClient();
 
 export const syncUser = async (req: Request, res: Response) => {
   try {
-    const { uid, email, displayName } = req.user!;
+    const user = req.user;
+    
+    if (!user || !user.uid) {
+      res.status(401).json({ error: 'Usuario no autenticado' });
+      return;
+    }
+
+    const { uid, email, displayName } = user;
 
     // Buscar o crear usuario en la base de datos
-    const user = await prisma.user.upsert({
+    const dbUser = await prisma.user.upsert({
       where: { firebaseUid: uid },
       update: {
         email: email || '',
-        displayName,
+        displayName: displayName ?? null,
       },
       create: {
         firebaseUid: uid,
         email: email || '',
-        displayName,
+        displayName: displayName ?? null,
       },
     });
 
     res.json({
       success: true,
       user: {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
+        id: dbUser.id,
+        email: dbUser.email,
+        displayName: dbUser.displayName,
       },
     });
   } catch (error) {
