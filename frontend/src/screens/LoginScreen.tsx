@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityInd
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { GoogleSignin, statusCodes,} from '@react-native-google-signin/google-signin';
 import { auth } from '../config/firebase';
+import api from '../config/api';
 
 // Configuración de Google Sign-In con el Web Client ID desde variables de entorno
 GoogleSignin.configure({
@@ -20,6 +21,19 @@ export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
 
   /**
+   * Sincroniza el usuario con el backend
+   */
+  const syncUserWithBackend = async () => {
+    try {
+      await api.post('/users/sync');
+      console.log('✅ Usuario sincronizado con el backend');
+    } catch (error) {
+      console.error('⚠️ Error sincronizando usuario:', error);
+      // No bloqueamos el login si falla la sincronización
+    }
+  };
+
+  /**
    * Maneja el inicio de sesión con email y contraseña
    */
   const handleEmailLogin = async () => {
@@ -33,6 +47,10 @@ export default function LoginScreen({ navigation }: any) {
     try {
       // Autenticación con Firebase Auth
       await signInWithEmailAndPassword(auth, email, password);
+      
+      // Sincronizar con el backend
+      await syncUserWithBackend();
+      
       navigation.replace('Home');
     } catch (error: any) {
       let errorMessage = 'Error al iniciar sesión';
@@ -83,6 +101,9 @@ export default function LoginScreen({ navigation }: any) {
 
       // Autenticar al usuario con la credencial en Firebase
       await signInWithCredential(auth, googleCredential);
+      
+      // Sincronizar con el backend
+      await syncUserWithBackend();
       
       // Navegar a la pantalla Home si es exitoso
       navigation.replace('Home');
