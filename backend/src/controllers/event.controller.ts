@@ -66,12 +66,12 @@ export const getEventById = async (req: Request, res: Response) => {
     const event = await prisma.event.findUnique({
       where: { id },
       include: {
-        organizer: { select: { id: true, displayName: true, email: true } },
+        organizer: { select: { id: true, firebaseUid: true, displayName: true, email: true } },
         attendances: {
-          include: { user: { select: { id: true, displayName: true } } },
+          include: { user: { select: { id: true, firebaseUid: true, displayName: true } } },
         },
         reviews: {
-          include: { user: { select: { id: true, displayName: true } } },
+          include: { user: { select: { id: true, firebaseUid: true, displayName: true } } },
         },
       },
     });
@@ -188,5 +188,57 @@ export const getUserEvents = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error getting user events:', error);
     res.status(500).json({ error: 'Error al obtener historial' });
+  }
+};
+
+// Actualizar evento (solo el organizador puede hacerlo)
+export const updateEvent = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, description, date, location } = req.body;
+    const firebaseUid = req.user?.uid;
+
+    if (!id) {
+      res.status(400).json({ error: 'ID de evento requerido' });
+      return;
+    }
+
+    if (!firebaseUid) {
+      res.status(401).json({ error: 'No autenticado' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { firebaseUid } });
+    if (!user) {
+      res.status(404).json({ error: 'Usuario no encontrado' });
+      return;
+    }
+
+    // Verificar que el usuario es el organizador
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) {
+      res.status(404).json({ error: 'Evento no encontrado' });
+      return;
+    }
+
+    if (event.organizerId !== user.id) {
+      res.status(403).json({ error: 'Solo el organizador puede editar el evento' });
+      return;
+    }
+
+    const updatedEvent = await prisma.event.update({
+      where: { id },
+      data: {
+        title,
+        description: description ?? null,
+        date: new Date(date),
+        location,
+      },
+    });
+
+    res.json({ success: true, event: updatedEvent });
+  } catch (error) {
+    console.error('Error updating event:', error);
+    res.status(500).json({ error: 'Error al actualizar evento' });
   }
 };

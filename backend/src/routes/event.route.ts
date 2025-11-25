@@ -7,6 +7,7 @@ import {
   attendEvent,
   cancelAttendance,
   getUserEvents,
+  updateEvent,
 } from '../controllers/event.controller.js';
 
 const eventRouter = Router();
@@ -18,6 +19,9 @@ eventRouter.get('/:id', verifyFirebaseToken, getEventById);
 
 // Crear evento
 eventRouter.post('/', verifyFirebaseToken, createEvent);
+
+// Actualizar evento (solo organizador)
+eventRouter.put('/:id', verifyFirebaseToken, updateEvent);
 
 // RSVP
 eventRouter.post('/:id/attend', verifyFirebaseToken, attendEvent);
