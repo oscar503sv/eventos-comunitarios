@@ -58,6 +58,11 @@ export const getEventById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
+    if (!id) {
+      res.status(400).json({ error: 'ID de evento requerido' });
+      return;
+    }
+
     const event = await prisma.event.findUnique({
       where: { id },
       include: {
@@ -89,6 +94,11 @@ export const attendEvent = async (req: Request, res: Response) => {
     const { id } = req.params;
     const firebaseUid = req.user?.uid;
 
+    if (!id) {
+      res.status(400).json({ error: 'ID de evento requerido' });
+      return;
+    }
+
     if (!firebaseUid) {
       res.status(401).json({ error: 'No autenticado' });
       return;
@@ -118,6 +128,11 @@ export const cancelAttendance = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const firebaseUid = req.user?.uid;
+
+    if (!id) {
+      res.status(400).json({ error: 'ID de evento requerido' });
+      return;
+    }
 
     if (!firebaseUid) {
       res.status(401).json({ error: 'No autenticado' });

@@ -8,6 +8,11 @@ export const createReview = async (req: Request, res: Response) => {
     const { rating, comment } = req.body;
     const firebaseUid = req.user?.uid;
 
+    if (!eventId) {
+      res.status(400).json({ error: 'ID de evento requerido' });
+      return;
+    }
+
     if (!firebaseUid) {
       res.status(401).json({ error: 'No autenticado' });
       return;
@@ -42,6 +47,11 @@ export const getEventReviews = async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
 
+    if (!eventId) {
+      res.status(400).json({ error: 'ID de evento requerido' });
+      return;
+    }
+
     const reviews = await prisma.review.findMany({
       where: { eventId },
       include: { user: { select: { id: true, displayName: true } } },
@@ -51,15 +61,15 @@ export const getEventReviews = async (req: Request, res: Response) => {
     const stats = await prisma.review.aggregate({
       where: { eventId },
       _avg: { rating: true },
-      _count: { rating: true },
+      _count: true,
     });
 
     res.json({
       success: true,
       reviews,
       stats: {
-        average: stats._avg.rating || 0,
-        count: stats._count.rating,
+        average: stats._avg?.rating || 0,
+        count: stats._count || 0,
       },
     });
   } catch (error) {
