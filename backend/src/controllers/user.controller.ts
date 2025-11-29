@@ -12,19 +12,46 @@ export const syncUser = async (req: Request, res: Response) => {
 
     const { uid, email, displayName } = user;
 
-    // Buscar o crear usuario en la base de datos
-    const dbUser = await prisma.user.upsert({
+    // Primero buscar si existe un usuario con este firebaseUid
+    let dbUser = await prisma.user.findUnique({
       where: { firebaseUid: uid },
-      update: {
-        email: email || '',
-        displayName: displayName ?? null,
-      },
-      create: {
-        firebaseUid: uid,
-        email: email || '',
-        displayName: displayName ?? null,
-      },
     });
+
+    if (dbUser) {
+      // Si existe, actualizar sus datos
+      dbUser = await prisma.user.update({
+        where: { firebaseUid: uid },
+        data: {
+          email: email || dbUser.email,
+          displayName: displayName ?? dbUser.displayName,
+        },
+      });
+    } else {
+      // Si no existe, verificar si hay un usuario con ese email
+      const existingByEmail = await prisma.user.findUnique({
+        where: { email: email || '' },
+      });
+
+      if (existingByEmail) {
+        // Actualizar el firebaseUid del usuario existente
+        dbUser = await prisma.user.update({
+          where: { email: email || '' },
+          data: {
+            firebaseUid: uid,
+            displayName: displayName ?? existingByEmail.displayName,
+          },
+        });
+      } else {
+        // Crear nuevo usuario
+        dbUser = await prisma.user.create({
+          data: {
+            firebaseUid: uid,
+            email: email || '',
+            displayName: displayName ?? null,
+          },
+        });
+      }
+    }
 
     res.json({
       success: true,

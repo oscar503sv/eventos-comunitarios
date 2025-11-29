@@ -213,8 +213,8 @@ export default function EventDetailScreen({ route, navigation }: any) {
         </Text>
       </View>
 
-      {/* Botón de editar (solo visible para el organizador) */}
-      {event.organizer.firebaseUid === currentUserUid && (
+      {/* Botón de editar (solo visible para el organizador y si el evento no ha pasado) */}
+      {event.organizer.firebaseUid === currentUserUid && !isPastEvent && (
         <View style={styles.actionContainer}>
           <TouchableOpacity
             style={styles.editButton}
@@ -245,55 +245,57 @@ export default function EventDetailScreen({ route, navigation }: any) {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>⭐ Reseñas</Text>
           
-          {/* Botón o formulario de reseña */}
-          {!showReviewForm ? (
-            <TouchableOpacity
-              style={styles.reviewButton}
-              onPress={() => setShowReviewForm(true)}
-            >
-              <Text style={styles.reviewButtonText}>Escribir Reseña</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.reviewForm}>
-              {/* Selector de calificación */}
-              <Text style={styles.label}>Calificación:</Text>
-              <View style={styles.ratingContainer}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <TouchableOpacity key={star} onPress={() => setRating(star)}>
-                    <Text style={styles.star}>
-                      {star <= rating ? '⭐' : '☆'}
-                    </Text>
+          {/* Botón o formulario de reseña (solo si el usuario confirmó asistencia) */}
+          {isAttending && (
+            !showReviewForm ? (
+              <TouchableOpacity
+                style={styles.reviewButton}
+                onPress={() => setShowReviewForm(true)}
+              >
+                <Text style={styles.reviewButtonText}>Escribir Reseña</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.reviewForm}>
+                {/* Selector de calificación */}
+                <Text style={styles.label}>Calificación:</Text>
+                <View style={styles.ratingContainer}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                      <Text style={styles.star}>
+                        {star <= rating ? '⭐' : '☆'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Campo de comentario */}
+                <Text style={styles.label}>Comentario (opcional):</Text>
+                <TextInput
+                  style={styles.input}
+                  value={comment}
+                  onChangeText={setComment}
+                  placeholder="Escribe tu comentario..."
+                  multiline
+                  numberOfLines={3}
+                />
+
+                {/* Botones del formulario */}
+                <View style={styles.reviewFormButtons}>
+                  <TouchableOpacity
+                    style={styles.submitButton}
+                    onPress={handleSubmitReview}
+                  >
+                    <Text style={styles.submitButtonText}>Enviar</Text>
                   </TouchableOpacity>
-                ))}
+                  <TouchableOpacity
+                    style={styles.cancelReviewButton}
+                    onPress={() => setShowReviewForm(false)}
+                  >
+                    <Text style={styles.cancelReviewText}>Cancelar</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-
-              {/* Campo de comentario */}
-              <Text style={styles.label}>Comentario (opcional):</Text>
-              <TextInput
-                style={styles.input}
-                value={comment}
-                onChangeText={setComment}
-                placeholder="Escribe tu comentario..."
-                multiline
-                numberOfLines={3}
-              />
-
-              {/* Botones del formulario */}
-              <View style={styles.reviewFormButtons}>
-                <TouchableOpacity
-                  style={styles.submitButton}
-                  onPress={handleSubmitReview}
-                >
-                  <Text style={styles.submitButtonText}>Enviar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.cancelReviewButton}
-                  onPress={() => setShowReviewForm(false)}
-                >
-                  <Text style={styles.cancelReviewText}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            )
           )}
 
           {/* Lista de reseñas existentes */}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
 /**
@@ -9,6 +9,7 @@ import { auth } from '../config/firebase';
  */
 export default function RegisterScreen({ navigation }: any) {
   // Estados locales para el formulario de registro
+  const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,7 +21,7 @@ export default function RegisterScreen({ navigation }: any) {
    */
   const handleRegister = async () => {
     // Validar que todos los campos estén completos
-    if (!email || !password || !confirmPassword) {
+    if (!displayName.trim() || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
@@ -40,7 +41,13 @@ export default function RegisterScreen({ navigation }: any) {
     setLoading(true);
     try {
       // Crear usuario en Firebase Auth
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Actualizar el perfil con el nombre
+      await updateProfile(userCredential.user, {
+        displayName: displayName.trim(),
+      });
+      
       Alert.alert(
         '¡Éxito!',
         'Usuario registrado correctamente',
@@ -74,6 +81,17 @@ export default function RegisterScreen({ navigation }: any) {
       <View style={styles.container}>
         <Text style={styles.title}>Crear Cuenta</Text>
         <Text style={styles.subtitle}>Regístrate para comenzar</Text>
+        
+        {/* Campo de entrada para nombre */}
+        <TextInput
+          style={styles.input}
+          placeholder="Nombre completo"
+          placeholderTextColor="#999"
+          value={displayName}
+          onChangeText={setDisplayName}
+          autoCapitalize="words"
+          editable={!loading}
+        />
         
         {/* Campo de entrada para email */}
         <TextInput
