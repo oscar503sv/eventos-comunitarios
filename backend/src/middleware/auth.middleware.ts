@@ -1,16 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import admin from '../config/firebase.js';
 
-// Extender Request para incluir user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        uid: string;
-        email: string | undefined;
-        displayName: string | undefined;
-      };
-    }
+// Interfaz para el usuario autenticado
+interface AuthUser {
+  uid: string;
+  email: string | undefined;
+  displayName: string | undefined;
+}
+
+// Extender Request usando module augmentation
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: AuthUser;
   }
 }
 
@@ -18,18 +19,20 @@ export const verifyFirebaseToken = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' });
+      res.status(401).json({ error: 'No token provided' });
+      return;
     }
 
     const token = authHeader.split('Bearer ')[1];
     
     if (!token) {
-      return res.status(401).json({ error: 'Token malformed' });
+      res.status(401).json({ error: 'Token malformed' });
+      return;
     }
 
     const decodedToken = await admin.auth().verifyIdToken(token);
@@ -43,6 +46,7 @@ export const verifyFirebaseToken = async (
     next();
   } catch (error) {
     console.error('Token verification error:', error);
-    return res.status(401).json({ error: 'Invalid or expired token' });
+    res.status(401).json({ error: 'Invalid or expired token' });
+    return;
   }
 };
